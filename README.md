@@ -3,6 +3,8 @@
 
 # _Sample project_
 
+跟随尚硅谷的智能门锁项目，学习esp32开发和使用
+
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This is the simplest buildable example. The example is used by command `idf.py create-project`
