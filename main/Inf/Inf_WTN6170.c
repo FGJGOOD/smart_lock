@@ -14,7 +14,7 @@ void Inf_WTN6170_Init(void)
     WTN6170_DATA_H;
 }
 
-void Inf_WTN6170_SenCmd(uint8_t cmd)
+void Inf_WTN6170_SendCmd(uint8_t cmd)
 {
     WTN6170_DATA_L;
     vTaskDelay(10); 
