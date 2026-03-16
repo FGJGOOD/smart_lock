@@ -5,6 +5,8 @@
 #include "driver/gpio.h"
 #include "sys/unistd.h"
 #include "esp_task.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #define WTN6170_DATA_PIN GPIO_NUM_9
 #define WTN6170_DATA_L (gpio_set_level(WTN6170_DATA_PIN,0))

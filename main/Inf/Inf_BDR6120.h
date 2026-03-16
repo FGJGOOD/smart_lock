@@ -4,6 +4,8 @@
 #include "driver/gpio.h"                                  /* 为什么不用父目录 */
 #include "../Common/Com_Debug.h"
 #include "esp_task.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #define INF_BDR_INA GPIO_NUM_4
 #define INF_BDR_INB GPIO_NUM_5
