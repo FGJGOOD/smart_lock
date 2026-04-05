@@ -30,6 +30,7 @@
 #define sayPressSharp() Inf_WTN6170_SendCmd(34)
 #define sayDelSucc() Inf_WTN6170_SendCmd(36)
 #define sayDelFail() Inf_WTN6170_SendCmd(37)
+#define sayDelAll() Inf_WTN6170_SendCmd(39)
 #define sayVerifySucc() Inf_WTN6170_SendCmd(41)
 #define sayVerifyFail() Inf_WTN6170_SendCmd(42)
 #define saySetSucc() Inf_WTN6170_SendCmd(43)

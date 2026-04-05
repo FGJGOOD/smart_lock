@@ -97,3 +97,17 @@ Touch_Key Inf_SC12B_KeyClick(void)
 
     return key_click;
 }
+
+volatile int isTouch = 0;
+Touch_Key Inf_SC12B_GetKeyClick(void)
+{
+    Touch_Key touchkey = KEY_NO;
+    if(isTouch)                        //***********这一块的逻辑待补充***********isTouch来自判断按键按下的函数 */
+    {
+        touchkey = Inf_SC12B_KeyClick(); //读一次键入
+
+        isTouch = 0;
+    }
+
+    return touchkey;
+}

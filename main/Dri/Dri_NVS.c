@@ -22,9 +22,9 @@ esp_err_t Dri_NVS_WriteStr(uint8_t key[], uint8_t value[])
     return nvs_set_str(my_handle, (char*)key,(char*)value);
 }
 
-esp_err_t Dri_NVS_ReadStr(uint8_t key[], uint8_t value[],size_t * len)
+esp_err_t Dri_NVS_ReadStr(uint8_t key[], uint8_t value[],uint8_t *len)
 {
-    return nvs_get_str(my_handle,(char*)key,(char*)value,len);
+    return nvs_get_str(my_handle,(char*)key,(char*)value,(size_t*)len);
 }
 
 esp_err_t Dri_NVS_DeleKey(uint8_t key[])

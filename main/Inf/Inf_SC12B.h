@@ -37,4 +37,6 @@ uint8_t Inf_SC12B_ReadReg(uint8_t reg_addr);
 
 Touch_Key Inf_SC12B_KeyClick(void);
 
+Touch_Key Inf_SC12B_GetKeyClick(void);
+
 #endif
