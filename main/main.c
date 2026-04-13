@@ -5,12 +5,20 @@
 #include "freertos/task.h"
 #include "Dri/Dri_NVS.h"
 #include "App/App_IO.h"
+#include "Inf/Inf_FPM383.h"
 
 void key_scan_task(void * args);
 TaskHandle_t keyScanHandler;
+void finger_scan_task(void * args);
+TaskHandle_t fingerScanHandler;
 
 void app_main(void)
 {
+    // //初始化指纹模块  测试用的
+    // Inf_FPM383_Init();
+    // Inf_FPM383_ReadId();
+    // Inf_FPM383_Sleep();  //要进入休眠才能使用中断
+
     //初始化所有
     App_IO_Init();
 
@@ -21,6 +29,13 @@ void app_main(void)
                 NULL,
                 5,
                 &keyScanHandler);  //优先级最高24
+
+    xTaskCreate(finger_scan_task,
+                "finger_scan_task",
+                2048,
+                NULL,
+                5,
+                &fingerScanHandler);  //优先级最高24
 }
 
 void key_scan_task(void *)
@@ -53,6 +68,15 @@ void key_scan_task(void *)
         memset(pwd,0,sizeof(pwd)); //清零
 
         vTaskDelay(10); //10ms
+    }
+}
+
+void finger_scan_task(void *)
+{
+    while(1)
+    {
+        App_IO_Finger();
+        vTaskDelay(50);
     }
 }
 

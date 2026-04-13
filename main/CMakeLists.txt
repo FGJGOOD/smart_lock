@@ -5,6 +5,7 @@ idf_component_register(
         "Inf/Inf_BDR6120.c"
         "Inf/Inf_WTN6170.c" 
         "Inf/Inf_SC12B.c"
+        "Inf/Inf_FPM383.c"
         "Dri/Dri_NVS.c"
         "App/App_IO.c"             
                     

@@ -4,6 +4,9 @@
 uint8_t first_buffer[100] = {0}; //两个数组用作输入和比对
 uint8_t second_buffer[100] = {0};
 
+extern TaskHandle_t fingerScanHandler;
+extern uint8_t hasFinger;
+
 static void App_IO_ClearBuffer(void)
 {
     memset(first_buffer,0,sizeof(first_buffer));
@@ -109,8 +112,7 @@ static Com_Status App_IO_CheckAdmin(void)
 
     return Com_ERROR;
 }
-
-static void App_IO_DelAdmin( void )
+static void App_IO_DelAdmin(void)
 {
     if(Dri_NVS_IsKeyExist((uint8_t*)Admin_PWD) != ESP_OK) //管理员账户不存在，无法删除
     {
@@ -168,7 +170,7 @@ static void App_IO_AddUser(void)
                             //比较
                             if(strcmp((char*)first_buffer,(char*)second_buffer) == 0)
                             {
-                                esp_err_t err = Dri_NVS_WriteStr(first_buffer,(uint8_t*)"0");
+                                esp_err_t err = Dri_NVS_WriteStr(first_buffer,(uint8_t*)"0"); //用户密码当作Key存储，value不重要
                                 if(err == ESP_OK)
                                 {
                                     sayAddSucc();
@@ -259,10 +261,9 @@ static void App_IO_DelUser(void)
 
     App_IO_ClearBuffer();
 }
-
 static void App_IO_CheckUser(uint8_t pwd[])
 {
-    if(Dri_NVS_IsKeyExist(pwd) == ESP_OK)
+    if(Dri_NVS_IsKeyExist(pwd) == ESP_OK)  //只要判断key存在就可以通过验证，注意这里和管理员不同，管理员key值固定，要读取和比较value值才能确定是管理员
     {
         sayVerifySucc();
         Inf_BDR6120_Open(); // 开锁
@@ -286,6 +287,8 @@ void App_IO_Init(void)
     Inf_SC12B_Init(); //按键
 
     Dri_NVS_Init(); //flash
+
+    Inf_FPM383_Init();//指纹模块
 }
 
 Com_Status App_IO_ReadStr(uint8_t pwd[])
@@ -356,6 +359,45 @@ void App_IO_Handle(uint8_t pwd[])
         {
             App_IO_DelUser();
         }
+        else if(pwd[0] == '2' && pwd[1] == '0') //注册指纹
+        {
+            sayWithoutInt();
+            sayAddUserFingerprint();
+            //验证管理员
+            Com_Status comstatus = App_IO_CheckAdmin();
+            
+            if(comstatus == Com_OK)
+            {
+            //注册  通知指纹任务
+            xTaskNotify(fingerScanHandler,(uint32_t)1,eSetValueWithOverwrite);
+            }
+            else
+            {
+                sayVerifyFail();
+            }
+        }
+        else if(pwd[0] == '2' && pwd[1] == '1') //删除指纹
+        {
+            sayWithoutInt();
+            sayDelUserFingerprint();            
+            //验证管理员
+            Com_Status comstatus = App_IO_CheckAdmin();
+            
+            if(comstatus == Com_OK)
+            {
+            //删除
+            xTaskNotify(fingerScanHandler,(uint32_t)2,eSetValueWithOverwrite);
+            }
+            else
+            {
+                sayVerifyFail();
+            }            
+        }
+        else if(pwd[0] == '8' && pwd[1] == '8') //删除所有指纹
+        {
+            sayDelAll();
+            Inf_FPM383_DeleAllFingerPrint();
+        }
         else if(pwd[0] == '9' && pwd[1] == '9')
         {
             sayDelAll();//语音播报删除所有
@@ -371,4 +413,91 @@ void App_IO_Handle(uint8_t pwd[])
         App_IO_CheckUser(pwd); //验证密码开锁
     }
     
+}
+
+void App_IO_Finger(void)
+{
+    //等待外部通知
+    uint32_t action = 0; //用来区分不同的任务通知
+    xTaskNotifyWait(UINT32_MAX,UINT32_MAX,&action,0);
+
+    if(action != 0)
+    {
+        gpio_intr_disable(INF_FPM383_INTR_PIN); //先关闭中断，防止手指放上去触发中断将hasFinger置1
+        if(action == 1)//添加指纹
+        {
+            sayPlaceFinger();
+            vTaskDelay(1500); //等1.s让用户放好手指
+            uint16_t id = Inf_FPM383_GetMinId();
+            MY_LOGE("Add ID = %d",id);
+
+            Com_Status comstatus = Inf_FPM383_AddFingerPrint(id);
+
+            if(comstatus == Com_OK)
+            {
+                sayFingerprintAddSucc();
+            }
+            else
+            {
+                sayFingerprintAddFail();
+            }
+        }
+        else if(action == 2)
+        {
+            sayPlaceFinger();
+            vTaskDelay(1500); //等待用户放手指
+            int16_t id = Inf_FPM383_GetFingerPrintId();//获取当前手指指纹id
+            MY_LOGE("Del id = %d",id);
+
+            if(id != -1)
+            {
+                Com_Status comstatus = Inf_FPM383_DeleFingerPrint(id);
+                if(comstatus == OK)
+                {
+                    sayDelSucc();
+                }
+                else
+                {
+                    sayDelFail();
+                }
+
+            }
+            else
+            {
+                sayDelFail();
+            }
+        }
+
+        //进入休眠
+        Inf_FPM383_Sleep();
+    }
+    else
+    {
+        //默认情况，验证指纹
+        if(hasFinger)
+        {
+            hasFinger = 0;
+            //有手指按下，验证开锁
+            Com_Status comstatus = Inf_FPM383_CheckFingerPrint();
+
+            if(comstatus == Com_OK)
+            {
+                sayVerifySucc();
+                Inf_BDR6120_Open();
+                sayDoorOpen();
+            }
+            else
+            {
+                sayWithoutInt();
+                sayVerifyFail();
+                sayWithoutInt();
+                sayRetry();
+            }
+
+            //让指纹模块进入休眠,这样下一次中断才有效   vTaskDelay(2000); esp_restart();或者用这个
+            Inf_FPM383_Sleep();
+            
+        }
+
+    }
 }
